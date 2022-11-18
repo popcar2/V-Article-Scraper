@@ -4,3 +4,4 @@ The purpose of this project is more about learning V and less about making a wor
 
 ## How to use
 Run the program, paste the link, and you should have the article copied to a .txt file.
+![Example image showcasing the program in use](/repository/media/example.png?raw=true "Example Image")
