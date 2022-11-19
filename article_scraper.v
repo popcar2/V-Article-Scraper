@@ -1,5 +1,6 @@
+import scraper
 import net.http { Response, get }
-import strings
+import strings { new_builder }
 import os { input, write_file }
 
 struct Article {
@@ -9,10 +10,13 @@ struct Article {
 }
 
 fn main() {
+	// What to look for in each website, it's a map[string]map[string]string
+	db_values := scraper.parse_json_file()
+
 	for {
 		url := input('Input article URL (0 to exit): ')
 
-		if url == '0' {
+		if url == '0' || url == '' {
 			return
 		}
 
@@ -23,7 +27,7 @@ fn main() {
 		match resp.status_code {
 			200 {
 				println('Connected!')
-				article := start_scraping(resp)
+				article := start_scraping(url, resp, db_values)
 
 				println('Writing to file...')
 				mut file_name := article.title
@@ -45,22 +49,28 @@ fn main() {
 }
 
 // Scrapes title, subtitle, and article body and returns an Article
-fn start_scraping(resp Response) Article {
-	title := scrape_tag(resp.body, 'h1')
-	subtitle := scrape_tag(resp.body, 'h2')
-	body := scrape_paragraphs(resp.body, 'section', 'class="article-page"')
+fn start_scraping(url string, resp Response, db_values map[string]map[string]string) Article {
+	scrape_vals := scraper.parse_url(url, db_values)
+
+	title := scrape_tag(resp.body, scrape_vals['title_tag'], scrape_vals['title_identifier'])
+	subtitle := scrape_tag(resp.body, scrape_vals['subtitle_tag'], scrape_vals['subtitle_identifier'])
+	body := scrape_paragraphs(resp.body, scrape_vals['p_tag'], scrape_vals['p_identifier'])
 
 	return Article{title, subtitle, body}
 }
 
 // Scrapes a specific HTML tag (like h1 and h2 for titles and subtitles respectively)
-fn scrape_tag(body string, tag string) string {
-	mut tag_start_index := body.index('<${tag}') or { return "COULDN'T FIND ${tag}" }
+fn scrape_tag(body string, tag string, identifier string) string {
+	mut tag_start_index := body.index('<${tag}${identifier}') or { return "COULDN'T FIND ${tag}" }
 	tag_start_index = body.index_after('>', tag_start_index)
 	tag_stop_index := body.index_after('</${tag}', tag_start_index + 1)
 
 	return clean_string(body[tag_start_index + 1..tag_stop_index])
 }
+
+// fn scrape_every_tag(body string, tag string) string[]{
+
+//}
 
 // Scrapes the body and separates each <p> paragraph text, ignoring everything inbetween
 fn scrape_paragraphs(body string, tag string, identifier string) string {
@@ -78,31 +88,38 @@ fn scrape_paragraphs(body string, tag string, identifier string) string {
 		section_stop_index = body.index_after('</${tag}', section_stop_index + 1)
 	}
 
+	if section_start_index == -1 || section_stop_index == -1 {
+		println("ERROR: Couldn't find article body start/stop")
+		return "ERROR: Couldn't find article body start/stop"
+	}
+
 	article_body := body[section_start_index + 1..section_stop_index]
 
-	mut str_builder := strings.new_builder(0)
+	mut str_builder := new_builder(0)
 
 	// Add contents of every <p>...</p> while still the article section
 	mut paragraph_start_index := article_body.index('<p>') or { -1 }
-	for paragraph_start_index != -1 && paragraph_start_index < section_stop_index {
+	for paragraph_start_index != -1 {
 		paragraph_end_index := article_body.index_after('</p>', paragraph_start_index)
 		paragraph := article_body[paragraph_start_index + 3..paragraph_end_index]
 		if paragraph != '' {
-			str_builder.writeln(paragraph)
+			str_builder.writeln(clean_string('${paragraph}\n'))
 		}
 		paragraph_start_index = article_body.index_after('<p>', paragraph_start_index + 3)
 	}
 
-	return clean_string(str_builder.str())
+	return str_builder.str().trim('\n')
 }
 
 // Removes HTML/string shenanigans
 fn clean_string(text string) string {
-	return text.replace('&quot;', '"').replace('&#x27;', "'").replace('&amp;', '&')
+	return text.replace('&quot;', '"').replace('&#34;', "'").replace('&#x27;', "'").replace('&rsquo;', "'")
+		.replace('&amp;', '&').replace('&nbsp;',' ').replace('&mdash;', '—').replace('&ldquo;', '“')
+		.replace('&rdquo;', '”').trim(' ')
 }
 
 fn remove_illegal_characters(text string) string {
-	mut str_builder := strings.new_builder(0)
+	mut str_builder := new_builder(0)
 
 	// Only add legal ASCII charactes [0-9][A-Z][a-z]
 	for c in text {
@@ -113,5 +130,5 @@ fn remove_illegal_characters(text string) string {
 		}
 	}
 
-	return str_builder.str()
+	return str_builder.str().trim(' ')
 }

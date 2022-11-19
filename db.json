@@ -1,0 +1,22 @@
+{
+    "ign": {
+        "title_tag": "h1",
+        "subtitle_tag": "h2",
+        "p_tag": "section",
+        "p_identifier": "class=\"article-page\""
+    },
+    "pcgamer": {
+        "title_tag": "h1",
+        "subtitle_tag": "p",
+        "subtitle_identifier": " class=\"strapline\"",
+        "p_tag": "div",
+        "p_identifier": "id=\"article-body\""
+    },
+    "vg247": {
+        "title_tag": "h1",
+        "subtitle_tag": "span",
+        "subtitle_identifier": " class=\"strapline\"",
+        "p_tag": "div",
+        "p_identifier": "class=\"article_body_content\""
+    }
+}
