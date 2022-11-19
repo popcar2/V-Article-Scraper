@@ -3,6 +3,7 @@ module scraper
 import json
 import os { read_file }
 
+// Extract data from json database and return the map
 pub fn parse_json_file() map[string]map[string]string {
 	println('Reading JSON file...')
 	file := read_file('./db.json') or { '' }
@@ -19,6 +20,7 @@ pub fn parse_json_file() map[string]map[string]string {
 	return db_values
 }
 
+// Finds the domain name and checks it with the database, then returns its map with what to scrape.
 pub fn parse_url(url string, db_values map[string]map[string]string) map[string]string {
 	mut start_domain_index := 0
 	mut end_domain_index := 0

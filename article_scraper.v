@@ -54,13 +54,17 @@ fn start_scraping(url string, resp Response, db_values map[string]map[string]str
 
 	title := scrape_tag(resp.body, scrape_vals['title_tag'], scrape_vals['title_identifier'])
 	subtitle := scrape_tag(resp.body, scrape_vals['subtitle_tag'], scrape_vals['subtitle_identifier'])
-	body := scrape_paragraphs(resp.body, scrape_vals['p_tag'], scrape_vals['p_identifier'])
+	body := scrape_paragraphs(resp.body, scrape_vals['body_tag'], scrape_vals['body_identifier'])
 
 	return Article{title, subtitle, body}
 }
 
 // Scrapes a specific HTML tag (like h1 and h2 for titles and subtitles respectively)
 fn scrape_tag(body string, tag string, identifier string) string {
+	if tag == ''{
+		return "EMPTY: No tag supplied"
+	}
+
 	mut tag_start_index := body.index('<${tag}${identifier}') or { return "COULDN'T FIND ${tag}" }
 	tag_start_index = body.index_after('>', tag_start_index)
 	tag_stop_index := body.index_after('</${tag}', tag_start_index + 1)
@@ -74,6 +78,8 @@ fn scrape_tag(body string, tag string, identifier string) string {
 
 // Scrapes the body and separates each <p> paragraph text, ignoring everything inbetween
 fn scrape_paragraphs(body string, tag string, identifier string) string {
+	write_file('./test.txt', body) or { panic('AHHH') }
+
 	mut section_start_index := body.index('<${tag} ${identifier}') or {
 		return "COULDN'T FIND BODY!"
 	}
@@ -98,14 +104,23 @@ fn scrape_paragraphs(body string, tag string, identifier string) string {
 	mut str_builder := new_builder(0)
 
 	// Add contents of every <p>...</p> while still the article section
-	mut paragraph_start_index := article_body.index('<p>') or { -1 }
+	mut paragraph_start_index := article_body.index('<p') or { -1 }
+
+	if paragraph_start_index == -1 {
+		println("ERROR: Couldn't find article body start/stop")
+		return "ERROR: Couldn't find article body start/stop"
+	}
+
 	for paragraph_start_index != -1 {
+		paragraph_start_index = article_body.index_after('>', paragraph_start_index + 1)
 		paragraph_end_index := article_body.index_after('</p>', paragraph_start_index)
-		paragraph := article_body[paragraph_start_index + 3..paragraph_end_index]
+
+		paragraph := article_body[paragraph_start_index + 1..paragraph_end_index]
 		if paragraph != '' {
 			str_builder.writeln(clean_string('${paragraph}\n'))
 		}
-		paragraph_start_index = article_body.index_after('<p>', paragraph_start_index + 3)
+
+		paragraph_start_index = article_body.index_after('<p', paragraph_start_index + 1)
 	}
 
 	return str_builder.str().trim('\n')
@@ -113,8 +128,8 @@ fn scrape_paragraphs(body string, tag string, identifier string) string {
 
 // Removes HTML/string shenanigans
 fn clean_string(text string) string {
-	return text.replace('&quot;', '"').replace('&#34;', "'").replace('&#x27;', "'").replace('&rsquo;', "'")
-		.replace('&amp;', '&').replace('&nbsp;',' ').replace('&mdash;', '—').replace('&ldquo;', '“')
+	return text.replace('&quot;', '"').replace('&#34;', "'").replace('&#x27;', "'").replace('&rsquo;',"'")
+		.replace('&amp;', '&').replace('&nbsp;', ' ').replace('&mdash;', '—').replace('&ldquo;','“')
 		.replace('&rdquo;', '”').trim(' ')
 }
 

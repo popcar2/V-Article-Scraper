@@ -2,21 +2,33 @@
     "ign": {
         "title_tag": "h1",
         "subtitle_tag": "h2",
-        "p_tag": "section",
-        "p_identifier": "class=\"article-page\""
+        "body_tag": "section",
+        "body_identifier": "class=\"article-page\""
     },
     "pcgamer": {
         "title_tag": "h1",
         "subtitle_tag": "p",
         "subtitle_identifier": " class=\"strapline\"",
-        "p_tag": "div",
-        "p_identifier": "id=\"article-body\""
+        "body_tag": "div",
+        "body_identifier": "id=\"article-body\""
     },
     "vg247": {
         "title_tag": "h1",
         "subtitle_tag": "span",
         "subtitle_identifier": " class=\"strapline\"",
-        "p_tag": "div",
-        "p_identifier": "class=\"article_body_content\""
+        "body_tag": "div",
+        "body_identifier": "class=\"article_body_content\""
+    },
+    "nytimes": {
+        "title_tag": "h1",
+        "subtitle_tag": "p",
+        "subtitle_identifier": " id=\"article-summary\"",
+        "body_tag": "div",
+        "body_identifier": "class=\"css-53u6y8\""
+    },
+    "cnbc": {
+        "title_tag": "h1",
+        "body_tag": "div",
+        "body_identifier": "class=\"ArticleBody-articleBody\""
     }
 }
